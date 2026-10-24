@@ -170,3 +170,38 @@ Conecte o Agente de IA do N8N a um modelo como Gemini ou GPT para:
 **Bons estudos e mãos à obra** 🚀
 
 Se tiver dúvidas, lembre-se: a melhor forma de aprender é experimentando. Erre, corrija e celebre cada pequena vitória no caminho.
+
+## ✅ Minha Solução
+
+**Autor:** Robson
+**Status:** Desafio Completo (MVP + Agente de IA + Gmail)
+
+### Como o fluxo funciona
+
+1. **RPA (Python, Google Colab)** – `rpa/extrair_clientes.ipynb` baixa a página `docs/index.html`, lê a tabela `#clientes` com BeautifulSoup e envia os 10 clientes via `POST` para o Webhook do n8n.
+2. **Recebe Clientes (Webhook)** – recebe `{ "clientes": [...] }`.
+3. **Busca Oportunidades (HTTP Request)** – baixa `docs/data.csv` como texto.
+4. **Organiza Investimentos (Code)** – transforma o CSV em uma lista de 9 investimentos (perfil, produto, mínimo, rentabilidade).
+5. **Junta Tudo (Merge – Combine by Position)** – une clientes e investimentos em um único item.
+6. **Escolhe Recomendação (Code)** – para cada cliente filtra os produtos do seu perfil e escolhe o de maior aplicação mínima que cabe no saldo (`motivo: saldo_ok`); se nenhum couber, sugere o de menor mínimo (`motivo: saldo_insuficiente`). Também gera mensagens estáticas (MVP).
+7. **Prepara E-mails (Code)** – separa em 1 item por cliente e anexa as regras de escrita (`copy_rules`: pt-BR, tom amigável, curto, sem promessas de ganho/garantias).
+8. **Agente de IA (OpenAI – GPT-4o)** – gera dinamicamente `subject`, `text_body` e `html_body` para cada cliente.
+9. **Trata Resposta IA (Code)** – remove o bloco ```` ```json ```` da resposta, faz o parse do JSON e junta o e-mail de destino (`to`).
+10. **Email Válidos (If)** – valida o formato do e-mail com regex `^[^@\s]+@[^@\s]+\.[^@\s]+$`.
+11. **Send a message (Gmail)** – envia o e-mail em HTML.
+12. **Devolve o resultado (Respond to Webhook)** – responde ao Colab com status 200.
+
+### Decisões técnicas
+
+- **n8n Cloud em vez de localhost:** o Google Colab roda na nuvem e não enxerga o `localhost` da máquina. Usar o n8n Cloud deixou o Webhook acessível sem instalar nada localmente.
+- **CSV lido como texto + Code:** mais simples e transparente do que nós extras; permite normalizar o campo `minimo` para número.
+- **Merge por posição:** garante que clientes e investimentos cheguem juntos ao node de recomendação.
+- **Regra de recomendação determinística antes da IA:** a escolha do produto é feita por código (perfil + saldo), e a IA só redige o texto. Isso evita que o LLM invente produtos ou valores.
+- **Regras de copy no prompt:** sem promessas de ganho, sem garantias e sem linguagem agressiva, adequado ao setor financeiro.
+- **Validação de e-mail antes do envio:** evita falhas no Gmail com endereços vazios ou malformados. Como os e-mails da base são fictícios, nos testes os envios foram direcionados para o meu próprio e-mail.
+
+### Arquivos
+
+- `rpa/extrair_clientes.ipynb` – script de RPA com o envio ao Webhook (TODO concluído)
+- `n8n/workflow.json` – workflow exportado do n8n
+- Vídeo da execução de ponta a ponta: _(link do Google Drive)_
