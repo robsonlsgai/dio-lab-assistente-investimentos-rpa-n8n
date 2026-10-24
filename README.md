@@ -185,7 +185,7 @@ Se tiver dúvidas, lembre-se: a melhor forma de aprender é experimentando. Erre
 5. **Junta Tudo (Merge – Combine by Position)** – une clientes e investimentos em um único item.
 6. **Escolhe Recomendação (Code)** – para cada cliente filtra os produtos do seu perfil e escolhe o de maior aplicação mínima que cabe no saldo (`motivo: saldo_ok`); se nenhum couber, sugere o de menor mínimo (`motivo: saldo_insuficiente`). Também gera mensagens estáticas (MVP).
 7. **Prepara E-mails (Code)** – separa em 1 item por cliente e anexa as regras de escrita (`copy_rules`: pt-BR, tom amigável, curto, sem promessas de ganho/garantias).
-8. **Agente de IA (OpenAI – GPT-4o)** – gera dinamicamente `subject`, `text_body` e `html_body` para cada cliente.
+8. **Agente de IA (OpenAI – GPT-4o-mini)** – gera dinamicamente `subject`, `text_body` e `html_body` para cada cliente.
 9. **Trata Resposta IA (Code)** – remove o bloco ```` ```json ```` da resposta, faz o parse do JSON e junta o e-mail de destino (`to`).
 10. **Email Válidos (If)** – valida o formato do e-mail com regex `^[^@\s]+@[^@\s]+\.[^@\s]+$`.
 11. **Send a message (Gmail)** – envia o e-mail em HTML.

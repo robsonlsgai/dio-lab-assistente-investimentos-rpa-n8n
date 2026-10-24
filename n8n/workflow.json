@@ -1,0 +1,524 @@
+{
+  "name": "DIO Desafio Investimento - Robson Luis Sgai",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clientes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -1488,
+        -240
+      ],
+      "id": "363ee624-db6a-4b0f-8a30-1226f681fe9c",
+      "name": "Webhook",
+      "webhookId": "9acddc4e-6be9-449b-a6fc-7c693f38e79e"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pega o CSV como texto vindo do HTTP Request\nconst csvRaw = $json.data ?? $json.body ?? $json;\nconst text = (typeof csvRaw === \"string\") ? csvRaw : JSON.stringify(csvRaw);\n\nconst lines = text.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);\nconst headers = lines[0].split(\",\").map(h => h.trim());\n\nconst investimentos = lines.slice(1).map(line => {\n  const cols = line.split(\",\").map(c => c.trim());\n  const obj = {};\n  headers.forEach((h, i) => obj[h] = cols[i] ?? \"\");\n\n  // normaliza mínimo para número\n  obj.minimo = Number(String(obj.minimo).replace(/[^\\d]/g, \"\")) || 0;\n\n  return obj;\n});\n\nreturn [{ json: { investimentos } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1008,
+        -576
+      ],
+      "id": "d98f4b9f-4006-4af6-90f6-c99f6e050df1",
+      "name": "Investimentos"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        864,
+        -240
+      ],
+      "id": "860f5eef-94dd-4b80-ae29-1a3538965cd6",
+      "name": "Tratamento Investimento"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        -832,
+        -240
+      ],
+      "id": "0f013083-96c4-4227-b505-05fc5af81b56",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "content": "📥 Recebe Clientes",
+        "height": 224,
+        "width": 192,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1536,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "cf4f72f6-1757-4746-88f5-236e0bfb3314",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "📊 Busca Oportunidades",
+        "height": 208,
+        "width": 192,
+        "color": "#85516A"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1328,
+        -656
+      ],
+      "typeVersion": 1,
+      "id": "1de9c28b-c1ce-46b1-a281-c164391eac5e",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "📤 Devolve o resultado",
+        "height": 224,
+        "width": 192,
+        "color": "#9C20AC"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "828c455e-9324-4e10-bd3d-4de3f498c83b",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "🧾 Organiza Investimentos",
+        "height": 208,
+        "width": 192,
+        "color": "#653E4C"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1056,
+        -656
+      ],
+      "typeVersion": 1,
+      "id": "c7f263e3-9a75-41e8-89d8-049bf0544125",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "🔗 Merge - Junta Tudo",
+        "height": 224,
+        "width": 192,
+        "color": "#7F6C7D"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -880,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "58013430-d49f-4ccd-8019-7d4bb02f6caf",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "📤🧠 Escolhe Recomendação",
+        "height": 224,
+        "width": 192,
+        "color": "#55776C"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -656,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "e4c78e22-4b57-4ad3-bf53-9827207833c6",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1) Pega os clientes (vieram do Colab pelo Webhook) e os investimentos (do node \"Investimentos\")\nconst entrada = $input.first().json;\nconst clientes = entrada.body?.clientes ?? $('Webhook').first().json.body.clientes ?? [];\nconst investimentos = entrada.investimentos ?? $('Investimentos').first().json.investimentos ?? [];\n\n// Transforma \"R$ 12.500,00\" em 12500\nfunction paraNumero(texto) {\n  const limpo = String(texto).replace(/[^\\d,]/g, \"\").replace(\",\", \".\");\n  return Number(limpo) || 0;\n}\n\n// Formata 1000 como \"R$ 1.000,00\"\nfunction paraReais(valor) {\n  return valor.toLocaleString(\"pt-BR\", { style: \"currency\", currency: \"BRL\" });\n}\n\n// Escolhe uma mensagem aleatória da lista\nfunction pick(lista) {\n  return lista[Math.floor(Math.random() * lista.length)];\n}\n\n// 2) Para cada cliente, escolhe o investimento do perfil dele\nconst resultados = clientes.map(c => {\n  const nome = c.nome;\n  const email = c.email;\n  const perfil = c.perfil;\n  const saldoNum = paraNumero(c.saldo);\n\n  // Opções do mesmo perfil, da menor para a maior aplicação mínima\n  const opcoes = investimentos\n    .filter(i => String(i.perfil).toLowerCase() === String(perfil).toLowerCase())\n    .sort((a, b) => a.minimo - b.minimo);\n\n  // Opções que o saldo do cliente já cobre\n  const cabeNoSaldo = opcoes.filter(i => i.minimo <= saldoNum);\n\n  let escolhido = null;\n  let motivo = \"sem_opcao_para_perfil\";\n  if (cabeNoSaldo.length > 0) {\n    escolhido = cabeNoSaldo[cabeNoSaldo.length - 1]; // a mais completa que cabe no saldo\n    motivo = \"saldo_ok\";\n  } else if (opcoes.length > 0) {\n    escolhido = opcoes[0]; // a de menor mínimo, para ele juntar até lá\n    motivo = \"saldo_insuficiente\";\n  }\n\n  // 3) Monta as mensagens para o cliente\n  let mensagens = [];\n  if (escolhido && motivo === \"saldo_ok\") {\n    const p = escolhido.produto, m = paraReais(escolhido.minimo), r = escolhido.rentabilidade;\n    mensagens = [\n      `Olá ${nome}! Pelo seu perfil (${perfil}), uma boa opção é **${p}** (mínimo ${m}). Com seu saldo atual (${c.saldo}), você já consegue investir. Rentabilidade: ${r}.`,\n      `Oi ${nome}! Recomendação para perfil ${perfil}: **${p}** (mínimo ${m}). Seu saldo (${c.saldo}) já atende o mínimo. Rentabilidade: ${r}.`,\n      `${nome}, indo direto ao ponto: para o perfil ${perfil}, **${p}** (mínimo ${m}). Você tem ${c.saldo}, então dá pra aplicar. Rentabilidade: ${r}.`,\n    ];\n  } else if (escolhido) {\n    const p = escolhido.produto, m = paraReais(escolhido.minimo), falta = paraReais(escolhido.minimo - saldoNum);\n    mensagens = [\n      `Olá ${nome}! Para o seu perfil (${perfil}), a opção de entrada é **${p}** (mínimo ${m}). Faltam ${falta} para você começar.`,\n      `Oi ${nome}! Seu saldo (${c.saldo}) ainda não cobre o mínimo de **${p}** (${m}). Juntando mais ${falta}, você já pode investir.`,\n    ];\n  } else {\n    mensagens = [`Olá ${nome}! No momento não temos opções cadastradas para o perfil ${perfil}.`];\n  }\n\n  return {\n    nome,\n    email,\n    perfil,\n    saldo_texto: c.saldo,\n    saldo_num: saldoNum,\n    recomendacao: escolhido,\n    motivo,\n    mensagens,\n    mensagem_escolhida: pick(mensagens),\n  };\n});\n\n// 4) Devolve tudo junto para o Respond to Webhook\nreturn [{\n  json: {\n    ok: true,\n    total_clientes: resultados.length,\n    total_investimentos: investimentos.length,\n    resultados,\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        -240
+      ],
+      "id": "815bcc4b-89d9-4009-aef2-b5570a49ed47",
+      "name": "Recomendacoes"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/robsonlsgai/dio-lab-assistente-investimentos-rpa-n8n/main/docs/data.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -1280,
+        -576
+      ],
+      "id": "20e743aa-3ec7-468b-bf39-d278900cbf89",
+      "name": "Busca Oportunidades"
+    },
+    {
+      "parameters": {
+        "jsCode": "const resultados = $json.resultados || [];\n\nfunction parseBRL(valor) {\n  if (!valor) return 0;\n  const s = String(valor)\n    .replace(\"R$\", \"\")\n    .replace(/\\./g, \"\")\n    .replace(\",\", \".\")\n    .replace(/[^\\d.]/g, \"\")\n    .trim();\n  const n = Number(s);\n  return Number.isFinite(n) ? n : 0;\n}\n\n// retorna UM ITEM por cliente\nconst out = resultados.map(c => {\n  const saldoNum = c.saldo_num ?? parseBRL(c.saldo_texto ?? c.saldo);\n\n  return {\n    json: {\n      email_to: String(c.email || \"\").trim(),\n      nome: String(c.nome || \"\").trim(),\n      perfil: c.perfil,\n      saldo_texto: c.saldo_texto ?? c.saldo,\n      saldo_num: saldoNum,\n      recomendacao: c.recomendacao,\n      motivo: c.motivo,\n      mensagem_base: c.mensagem_escolhida || c.mensagem || \"\",\n      copy_rules: {\n        idioma: \"pt-BR\",\n        tom: \"amigável e profissional\",\n        tamanho: \"curto (4-6 linhas)\",\n        evitar: [\"promessas de ganho\", \"garantias\", \"linguagem agressiva\"]\n      }\n    }\n  };\n});\n\nreturn out;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        -240
+      ],
+      "id": "dfa6b060-3032-41b9-afe9-1bbc4029d168",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "content": "📩 Prepara emails",
+        "height": 224,
+        "width": 192,
+        "color": "#896786"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -432,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "dc3b4233-a1f2-4242-887a-5c6367b1f48d",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "=user",
+              "content": "=Escreva um e-mail curto em pt-BR para o cliente abaixo, sem prometer ganhos e sem garantias.\n\nCliente:\nNome: {{ $json.nome }}\nPerfil: {{ $json.perfil }}\nSaldo: {{ $json.saldo_texto }}\n\nRecomendação:\nProduto: {{ $json.recomendacao.produto }}\nMínimo: {{ $json.recomendacao.minimo }}\nRentabilidade: {{ $json.recomendacao.rentabilidade }}\nMotivo: {{ $json.motivo }}\n\nRetorne APENAS JSON com:\n{\n  \"subject\": \"...\",\n  \"text_body\": \"...\",\n  \"html_body\": \"...\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -160,
+        -240
+      ],
+      "id": "aff212e4-7147-4689-8013-cd800a4298b0",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nome do node que preparou os e-mails (um item por cliente).\n// Se o seu tiver outro nome, troque aqui.\nconst NODE_EMAILS = \"Code in JavaScript\";\n\n// Pega o texto que a IA respondeu (funciona com os formatos do node OpenAI)\nfunction pegarTexto(j) {\n  return (\n    j?.output?.[0]?.content?.[0]?.text ??\n    j?.message?.content ??\n    j?.choices?.[0]?.message?.content ??\n    j?.text ??\n    j?.content ??\n    \"\"\n  );\n}\n\n// A IA costuma responder com ```json ... ```. Aqui limpamos e abrimos o JSON.\nfunction lerJSON(texto) {\n  let t = String(texto).trim();\n  t = t.replace(/^```(?:json)?\\s*/i, \"\").replace(/```\\s*$/, \"\").trim();\n  const ini = t.indexOf(\"{\");\n  const fim = t.lastIndexOf(\"}\");\n  if (ini >= 0 && fim > ini) t = t.slice(ini, fim + 1);\n  try {\n    return JSON.parse(t);\n  } catch (e) {\n    return null;\n  }\n}\n\nconst clientes = $(NODE_EMAILS).all();\n\nreturn $input.all().map((item, i) => {\n  const j = clientes[i]?.json ?? {};   // dados do cliente na mesma posição\n  const email = lerJSON(pegarTexto(item.json));\n\n  const subject = email?.subject ?? \"\";\n  const text_body = email?.text_body ?? \"\";\n  const html_body = email?.html_body ?? \"\";\n  const to = j.email_to ?? j.email ?? \"\";\n\n  return {\n    json: {\n      ok: Boolean(email && to),\n      to,\n      subject,\n      text_body,\n      html_body,\n\n      // (opcional) manter alguns campos úteis pra debug/aula\n      meta: {\n        nome: j.nome,\n        perfil: j.perfil,\n        produto: j.recomendacao?.produto,\n        minimo: j.recomendacao?.minimo,\n        rentabilidade: j.recomendacao?.rentabilidade,\n        motivo: j.motivo\n      }\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -240
+      ],
+      "id": "383593d6-e2d1-4268-89c7-a76f5c27c9b3",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -240
+      ],
+      "id": "b4dad35a-90dc-470b-b802-29130a25cdfc",
+      "name": "Send a message",
+      "webhookId": "4c4bbdd8-a087-4725-a42f-2732c7c42cfb",
+      "executeOnce": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lFPua4SQVKltbnpa",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "📩 Prepara emails",
+        "height": 224,
+        "width": 192,
+        "color": "#896786"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        144,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "cea2fa11-f93d-4424-83c7-b8f9b90e1f38",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "0544c6b6-c051-477f-ba51-1a652cf19166",
+              "leftValue": "={{ $json.to }}",
+              "rightValue": "=^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            },
+            {
+              "id": "f6b126b4-31bf-45ed-b4f9-54099dd55da3",
+              "leftValue": "={{ $json.to }}",
+              "rightValue": "@email.com",
+              "operator": {
+                "type": "string",
+                "operation": "notEndsWith"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.4,
+      "position": [
+        416,
+        -240
+      ],
+      "id": "3fdc23fa-e1cf-4caa-a3f4-9233512b59b6",
+      "name": "Email Validos"
+    },
+    {
+      "parameters": {
+        "content": "📩 Identfica email",
+        "height": 224,
+        "width": 192,
+        "color": "#3E754B"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        368,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "d4f30f5f-f6e2-4c75-ba3e-6974474a5585",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "📩 Encaminha",
+        "height": 224,
+        "width": 192,
+        "color": "#4F4B8B"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        592,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "bd4fa523-e7f9-4614-a31d-8c1aa5976260",
+      "name": "Sticky Note9"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Busca Oportunidades",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Investimentos": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Tratamento Investimento": {
+      "main": [
+        []
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Recomendacoes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recomendacoes": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Busca Oportunidades": {
+      "main": [
+        [
+          {
+            "node": "Investimentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Email Validos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Tratamento Investimento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Validos": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "baf101ca-34de-40be-a622-6beb5d72a182",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4df2098b0d8a0b0aa152c01d5458733f94a894ab2984bf7a69b4cf52608528d5"
+  },
+  "nodeGroups": [],
+  "id": "jOkS4t0qfegh0LtO",
+  "tags": []
+}
