@@ -204,4 +204,4 @@ Se tiver dúvidas, lembre-se: a melhor forma de aprender é experimentando. Erre
 
 - `rpa/extrair_clientes.ipynb` – script de RPA com o envio ao Webhook (TODO concluído)
 - `n8n/workflow.json` – workflow exportado do n8n
-- Vídeo da execução de ponta a ponta: _(link do Google Drive)_
+- Vídeo da execução de ponta a ponta: [assistir no Google Drive](https://drive.google.com/file/d/1wESJxsFVUnySHpjzzoXQ6D4VuZiwuiPt/view?usp=sharing)
